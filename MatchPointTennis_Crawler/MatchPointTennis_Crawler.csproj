@@ -78,7 +78,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DelegateCommand.cs" />
-    <Compile Include="Extensions\DoubleExtensions.cs" />
+    <Compile Include="Extensions\LongExtensions.cs" />
     <Compile Include="Mediator.cs" />
     <Compile Include="Models\Crawler\Crawler.cs" />
     <Compile Include="Models\tblMatch.cs" />

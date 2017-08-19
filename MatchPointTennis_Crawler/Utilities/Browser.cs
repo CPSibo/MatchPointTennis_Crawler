@@ -26,7 +26,7 @@ namespace MatchPointTennis_Crawler
 
         public static UInt64 NumberOfRequests { get; set; }
 
-        public static double NumberOfBytesTransfered { get; set; }
+        public static long NumberOfBytesTransfered { get; set; }
 
         static Browser()
         {
@@ -115,7 +115,7 @@ namespace MatchPointTennis_Crawler
 
             var content = await response?.Content.ReadAsStringAsync();
 
-            NumberOfBytesTransfered += Convert.ToDouble(System.Text.ASCIIEncoding.ASCII.GetByteCount(content));
+            NumberOfBytesTransfered += System.Text.ASCIIEncoding.ASCII.GetByteCount(content);
             Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestReceived, NumberOfBytesTransfered);
 
             watch.Stop();

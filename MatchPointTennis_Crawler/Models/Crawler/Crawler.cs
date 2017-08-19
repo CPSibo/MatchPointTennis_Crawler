@@ -136,7 +136,7 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
             Mediator.Instance.Register((object args) =>
             {
-                NumberOfBytes = ((double)args).BytesToString();
+                NumberOfBytes = ((long)args).BytesToString();
             }, ViewModelMessages.RequestReceived);
         }
 
