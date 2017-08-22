@@ -42,7 +42,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected async override Task<tklUserList> DoParse()
         {
-            var player = new Repository().Get<tklUserList>(f => f.UserID == USTAId);
+            var player = new Repository().Get<tklUserList>(f => f.USTAID == USTAId);
 
             var summaryTable = Document.Query("#ctl00_mainContent_tblIndividualAnchor") as IHtmlTableElement;
 
