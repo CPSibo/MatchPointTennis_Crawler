@@ -45,12 +45,19 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected async override Task<tklFlight> DoParse()
         {
+            var flight = new Repository().Get<tklFlight>(f => f.USTAID == USTAId);
+
+            if (flight != null)
+            {
+                return flight;
+            }
+
             var detailsTable = Document.Query("#ctl00_mainContent_pnlFlightSummary table") as IHtmlTableElement;
 
             var ratingText = decimal.Parse(detailsTable.Rows[2].Cells[1].InnerHtml.Cleanse());
             //var genderText = detailsTable.Rows[2].Cells[2].InnerHtml.Cleanse().ToLower();
 
-            var flight = new tklFlight()
+            flight = new tklFlight()
             {
                 USTAID = USTAId,
                 FlightGender = Crawler.Gender,

@@ -45,15 +45,22 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected async override Task<tklSubFlight> DoParse()
         {
+            var subflight = new Repository().Get<tklSubFlight>(f => f.USTAID == USTAId && Flight.FlightID == Flight.FlightID);
+
+            if(subflight != null)
+            {
+                return subflight;
+            }
+
             var summaryTable = Document.Query("#ctl00_mainContent_tblSubFlightAnchor") as IHtmlTableElement;
 
             var subflightText = summaryTable.Rows[1].Cells[0].QuerySelector("strong").InnerHtml.Cleanse();
 
-            var subflight = new tklSubFlight()
+            subflight = new tklSubFlight()
             {
                 USTAID = USTAId,
                 SubFlight = subflightText,
-                FlightID = Flight.LeagueID
+                FlightID = Flight.FlightID
             };
 
             new Repository().Add(subflight).Save(subflight);

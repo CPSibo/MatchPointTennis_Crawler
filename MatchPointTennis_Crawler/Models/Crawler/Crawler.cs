@@ -22,6 +22,23 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
         public decimal Rating { get; set; }
 
+        private StringBuilder _log = new StringBuilder();
+
+        public StringBuilder Log
+        {
+            get => _log;
+
+            set
+            {
+                _log = value;
+
+                NotifyPropertyChanged("Log");
+                NotifyPropertyChanged("LogValue");
+            }
+        }
+
+        public string LogValue => _log.ToString();
+
         private int _numberOfItems = 0;
 
         public int NumberOfItems
@@ -156,6 +173,36 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
         public async Task Search()
         {
+            Log = new StringBuilder();
+
+            if (Rating > 0)
+            {
+                await RunSearch(Rating);
+            }
+            else
+            {
+                var rating = 2.0m;
+
+                while (rating < 12.5m)
+                {
+                    await RunSearch(rating);
+
+                    rating += 0.5m;
+                }
+            }
+
+            Log.Append("FINISHED!");
+            Log = Log;
+        }
+
+        protected async Task RunSearch(decimal rating)
+        {
+            _itemsProcessed = 0;
+            _numberOfBytes = "";
+            _numberOfRequests = 0;
+            Browser.NumberOfRequests = 0;
+            Browser.NumberOfBytesTransfered = 0;
+
             var viewstate = await Browser.GetInitialViewState(Year.ToString(), Section, District);
 
             ElapsedTimer.Restart();
@@ -166,13 +213,15 @@ namespace MatchPointTennis_Crawler.Models.Crawler
                 (
                     viewstate: viewstate,
                     gender: Gender.Substring(0, 1),
-                    rating: Rating.ToString("0.0")
+                    rating: rating.ToString("0.0")
                 )
                 .Post();
 
             ElapsedTimer.Stop();
 
-            //ETAText = "Finished!";
+            Log.Append($"Finished {Section} | {District} | {Area} | {Gender} | {Year} | {rating}{Environment.NewLine}");
+            Log.Append($"\t{Elapsed:dd\\.hh\\:mm\\:ss} | {NumberOfRequests} Requests | {NumberOfBytes}{Environment.NewLine}{Environment.NewLine}");
+            Log = Log;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace MatchPointTennis_Crawler.Models
     public partial class TennisContext : DbContext
     {
         public TennisContext()
-            : base("name=TennisContext")
+            : base("name=TennisContext2")
         {
         }
 

@@ -42,6 +42,13 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected async override Task<tklLeague> DoParse()
         {
+            var league = new Repository().Get<tklLeague>(f => f.USTAID == USTAId);
+
+            if (league != null)
+            {
+                return league;
+            }
+
             var summaryTable = Document.Query("#ctl00_mainContent_tblLeagueAnchor") as IHtmlTableElement;
 
             var section = ProcessSection(summaryTable);
@@ -51,7 +58,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
             var leagueLeagueTypeText = summaryTable.Rows[1].Cells[0].QuerySelector("strong").InnerHtml.Cleanse();
 
-            var league = new tklLeague()
+            league = new tklLeague()
             {
                 USTAID = USTAId,
                 LeagueName = leagueLeagueTypeText,

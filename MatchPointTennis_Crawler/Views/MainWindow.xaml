@@ -3,10 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:global="clr-namespace:MatchPointTennis_Crawler"
         xmlns:local="clr-namespace:MatchPointTennis_Crawler.Views"
         xmlns:vm="clr-namespace:MatchPointTennis_Crawler.ViewModels"
         mc:Ignorable="d"
-        Title="MainWindow" Height="217.148" Width="541.471">
+        Title="MainWindow" Height="398.148" Width="541.471">
 
     <Window.DataContext>
         <vm:MainWindowViewModel/>
@@ -14,9 +15,9 @@
 
     <Grid>
         <Button Content="Start" Margin="10,63,10,0" VerticalAlignment="Top" Command="{Binding Search}" RenderTransformOrigin="0.497,0.413" Height="31" IsEnabled="{Binding ControlsEnabled}"/>
-        <ProgressBar x:Name="pgbTeamsProcessed" Maximum="{Binding Crawler.NumberOfItems}" Value="{Binding Crawler.ItemsProcessed}" Margin="10,0,10,31" Height="11" VerticalAlignment="Bottom" Foreground="#FF1D96DA"/>
-        <TextBlock x:Name="lblElapsed" Text="{Binding Path=Crawler.Elapsed, StringFormat=Elapsed: {0:dd\\.hh\\:mm\\:ss}}" HorizontalAlignment="Left" Margin="10,0,0,47" Width="178" Height="16" VerticalAlignment="Bottom"/>
-        <TextBlock x:Name="lblProgress" Margin="193,0,193,47" Height="16" VerticalAlignment="Bottom" TextAlignment="Center">
+        <ProgressBar x:Name="pgbTeamsProcessed" Maximum="{Binding Crawler.NumberOfItems}" Value="{Binding Crawler.ItemsProcessed}" Margin="10,129,10,0" Foreground="#FF1D96DA" Height="11" VerticalAlignment="Top"/>
+        <TextBlock x:Name="lblElapsed" Text="{Binding Path=Crawler.Elapsed, StringFormat=Elapsed: {0:dd\\.hh\\:mm\\:ss}}" HorizontalAlignment="Left" Margin="10,108,0,0" Width="178" Height="16" VerticalAlignment="Top"/>
+        <TextBlock x:Name="lblProgress" Margin="193,108,193,0" TextAlignment="Center" Height="16" VerticalAlignment="Top">
             <TextBlock.Text>
                 <MultiBinding StringFormat="{}{0:N0}/{1:N0}">
                     <Binding Path="Crawler.ItemsProcessed" />
@@ -24,7 +25,7 @@
                 </MultiBinding>
             </TextBlock.Text>
         </TextBlock>
-        <TextBlock x:Name="lblETA" Text="{Binding Path=Crawler.ETA, StringFormat=ETA: {0:dd\\.hh\\:mm\\:ss}}" Margin="0,0,10,47" HorizontalAlignment="Right" Width="178" Height="16" VerticalAlignment="Bottom" TextAlignment="Right"/>
+        <TextBlock x:Name="lblETA" Text="{Binding Path=Crawler.ETA, StringFormat=ETA: {0:dd\\.hh\\:mm\\:ss}}" Margin="0,108,10,0" HorizontalAlignment="Right" Width="178" TextAlignment="Right" Height="16" VerticalAlignment="Top"/>
         <TextBox x:Name="txtYear" HorizontalAlignment="Left" Height="22" Margin="10,36,0,0" TextWrapping="Wrap" Text="{Binding Crawler.Year}" VerticalAlignment="Top" Width="35" UndoLimit="0" IsEnabled="{Binding ControlsEnabled}"/>
         <TextBox x:Name="txtSection" HorizontalAlignment="Left" Height="22" Margin="50,36,0,0" TextWrapping="Wrap" Text="{Binding Crawler.Section}" VerticalAlignment="Top" Width="165" UndoLimit="0" IsEnabled="{Binding ControlsEnabled}"/>
         <TextBox x:Name="txtDistrict" HorizontalAlignment="Left" Height="22" Margin="220,36,0,0" TextWrapping="Wrap" Text="{Binding Crawler.District}" VerticalAlignment="Top" Width="120" UndoLimit="0" IsEnabled="{Binding ControlsEnabled}"/>
@@ -35,8 +36,13 @@
         <Label Content="Gender" HorizontalAlignment="Left" Margin="345,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.359,0.398"/>
         <TextBox x:Name="txtRating" HorizontalAlignment="Left" Height="22" Margin="399,36,0,0" TextWrapping="Wrap" Text="{Binding Path=Crawler.Rating, StringFormat={}{0:0.0}}" VerticalAlignment="Top" Width="49" UndoLimit="0" IsEnabled="{Binding ControlsEnabled}"/>
         <Label Content="Rating" HorizontalAlignment="Left" Margin="399,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.359,0.398"/>
-        <TextBlock x:Name="txtRequestNumber" HorizontalAlignment="Left" Margin="10,0,0,10" TextWrapping="Wrap" Text="{Binding Path=Crawler.NumberOfRequests, StringFormat={}{0:N0} Requests}" VerticalAlignment="Bottom" Width="178"/>
-        <TextBlock x:Name="txtData" Margin="193,0,193,10" TextWrapping="Wrap" Text="{Binding Path=Crawler.NumberOfBytes, StringFormat={}{0}}" TextAlignment="Center" Height="16" VerticalAlignment="Bottom"/>
+        <TextBlock x:Name="txtRequestNumber" HorizontalAlignment="Left" Margin="10,145,0,0" TextWrapping="Wrap" Text="{Binding Path=Crawler.NumberOfRequests, StringFormat={}{0:N0} Requests}" Width="178" Height="16" VerticalAlignment="Top"/>
+        <TextBlock x:Name="txtData" Margin="193,145,193,0" TextWrapping="Wrap" Text="{Binding Path=Crawler.NumberOfBytes, StringFormat={}{0}}" TextAlignment="Center" Height="16" VerticalAlignment="Top"/>
+        <Border BorderBrush="Gray" BorderThickness="0,2,0,0" Margin="10,166,10,10">
+            <ScrollViewer global:AutoScrollBehavior.AutoScroll="True">
+                <TextBlock x:Name="txtLog" TextWrapping="Wrap" Text="{Binding Crawler.LogValue}" />
+            </ScrollViewer>
+        </Border>
 
     </Grid>
 </Window>
