@@ -11,7 +11,6 @@ namespace MatchPointTennis_Crawler.ViewModels
     public class MainWindowViewModel : ObservableObject
     {
         private Crawler _crawler;
-
         public Crawler Crawler
         {
             get => _crawler;
@@ -22,6 +21,7 @@ namespace MatchPointTennis_Crawler.ViewModels
                 NotifyPropertyChanged("Crawler");
             }
         }
+
         public int Year { get; set; } = 2014;
 
         public string Section { get; set; } = "USTA/INTERMOUNTAIN";
@@ -34,8 +34,18 @@ namespace MatchPointTennis_Crawler.ViewModels
 
         public decimal Rating { get; set; } = 0.0m;
 
-        private bool _isRunning = false;
+        public List<string> Modes { get; set; } = new List<string>()
+        {
+            "League Matches" ,
+            "Tournaments",
+            "Player Rating Types",
+            "Dropdowns",
+            "Championships"
+        };
 
+        public int Mode { get; set; } = 0;
+
+        private bool _isRunning = false;
         public bool IsRunning
         {
             get => _isRunning;
@@ -51,8 +61,7 @@ namespace MatchPointTennis_Crawler.ViewModels
         public bool ControlsEnabled => !IsRunning;
 
         public MainWindowViewModel()
-        {
-        }
+        { }
 
         public ICommand Search => new DelegateCommand(() =>
         {
@@ -63,7 +72,25 @@ namespace MatchPointTennis_Crawler.ViewModels
         {
             IsRunning = true;
 
-            Crawler = new LeagueMatchCrawler();
+            switch(Mode)
+            {
+                case 0:
+                    Crawler = new LeagueMatchCrawler(this);
+                    break;
+
+                case 1:
+                    Crawler = new TournamentCrawler(this);
+                    break;
+
+                case 2:
+                    break;
+
+                case 3:
+                    break;
+
+                case 4:
+                    break;
+            }
 
             await Crawler.Search();
 

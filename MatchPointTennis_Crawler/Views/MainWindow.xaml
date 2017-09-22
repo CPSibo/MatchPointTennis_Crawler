@@ -35,13 +35,7 @@
                 <TextBox x:Name="txtRating" HorizontalAlignment="Left" Height="22" Margin="775,26,0,0" TextWrapping="Wrap" Text="{Binding Path=Rating, StringFormat={}{0:0.0}}" VerticalAlignment="Top" Width="49" UndoLimit="0" IsEnabled="{Binding ControlsEnabled}"/>
                 <Label Content="Rating" HorizontalAlignment="Left" Margin="770,0,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.359,0.398"/>
                 <Label Content="Mode" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
-                <ComboBox HorizontalAlignment="Left" Margin="10,26,0,0" VerticalAlignment="Top" Width="341" SelectedIndex="0">
-                    <ComboBoxItem Content="League Matches"/>
-                    <ComboBoxItem Content="Tournaments"/>
-                    <ComboBoxItem Content="Player Rating Types"/>
-                    <ComboBoxItem Content="Dropdowns"/>
-                    <ComboBoxItem Content="Championships"/>
-                </ComboBox>
+                <ComboBox HorizontalAlignment="Left" Margin="10,26,0,0" VerticalAlignment="Top" Width="341" ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode}"></ComboBox>
             </Grid>
         </GroupBox>
         <GroupBox Header="Step Progress" Height="87" Margin="10,117,10,0" VerticalAlignment="Top">

@@ -12,7 +12,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     public class PlayerSeason
         : ScrapeProfile<tklUserList>
     {
-        public PlayerSeason(LeagueMatchCrawler crawler)
+        public PlayerSeason(Crawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_tblIndividualAnchor";

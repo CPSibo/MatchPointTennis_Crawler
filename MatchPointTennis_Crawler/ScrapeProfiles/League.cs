@@ -12,7 +12,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     public class League
         : ScrapeProfile<tklLeague>
     {
-        public League(LeagueMatchCrawler crawler)
+        public League(Crawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_tblLeagueAnchor";
@@ -73,12 +73,12 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         private tklYear ProcessYear()
         {
-            var year = new Repository().Get<tklYear>(f => f.Year == Crawler.Year);
+            var year = new Repository().Get<tklYear>(f => f.Year == Crawler.ViewModel.Year);
             if (year == null)
             {
                 year = new tklYear()
                 {
-                    Year = Crawler.Year
+                    Year = Crawler.ViewModel.Year
                 };
                 new Repository().Add(year).Save(year);
             }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MatchPointTennis_Crawler.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,20 +12,9 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 {
     public abstract class Crawler : ObservableObject
     {
-        public int Year { get; set; }
-
-        public string Section { get; set; }
-
-        public string District { get; set; }
-
-        public string Area { get; set; }
-
-        public string Gender { get; set; }
-
-        public decimal Rating { get; set; }
+        public MainWindowViewModel ViewModel { get; set; }
 
         private StringBuilder _log = new StringBuilder();
-
         public StringBuilder Log
         {
             get => _log;
@@ -41,7 +31,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         public string LogValue => _log.ToString();
 
         private int _numberOfItems = 0;
-
         public int NumberOfItems
         {
             get => _numberOfItems;
@@ -55,7 +44,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private int _totalNumberOfItems = 0;
-
         public int TotalNumberOfItems
         {
             get => _totalNumberOfItems;
@@ -69,7 +57,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private int _itemsProcessed = 0;
-
         public int ItemsProcessed
         {
             get => _itemsProcessed;
@@ -83,7 +70,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private int _totalItemsProcessed = 0;
-
         public int TotalItemsProcessed
         {
             get => _totalItemsProcessed;
@@ -97,7 +83,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private TimeSpan _elapsed = TimeSpan.FromMilliseconds(0);
-
         public TimeSpan Elapsed
         {
             get => _elapsed;
@@ -110,7 +95,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private TimeSpan _totalElapsed = TimeSpan.FromMilliseconds(0);
-
         public TimeSpan TotalElapsed
         {
             get => _totalElapsed;
@@ -123,7 +107,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private TimeSpan _eta;
-
         public TimeSpan ETA
         {
             get => _eta;
@@ -136,7 +119,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private UInt64 _numberOfRequests;
-
         public UInt64 NumberOfRequests
         {
             get => _numberOfRequests;
@@ -149,7 +131,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private UInt64 _totalNumberOfRequests;
-
         public UInt64 TotalNumberOfRequests
         {
             get => _totalNumberOfRequests;
@@ -162,7 +143,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private long _numberOfBytes;
-
         public long NumberOfBytes
         {
             get => _numberOfBytes;
@@ -175,7 +155,6 @@ namespace MatchPointTennis_Crawler.Models.Crawler
         }
 
         private long _totalNumberOfBytes;
-
         public long TotalNumberOfBytes
         {
             get => _totalNumberOfBytes;
@@ -193,13 +172,9 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
         protected DispatcherTimer UpdateTimer { get; set; } = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1) };
 
-        public Crawler()
+        public Crawler(MainWindowViewModel viewModel)
         {
-            Year = 2014;
-            Section = "USTA/INTERMOUNTAIN";
-            District = "COLORADO";
-            Gender = "Female";
-            Rating = 0.0M;
+            ViewModel = viewModel;
 
             UpdateTimer.Tick += UpdateTimer_Tick;
 

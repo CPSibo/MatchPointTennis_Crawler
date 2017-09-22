@@ -10,9 +10,9 @@ using System.Windows.Threading;
 
 namespace MatchPointTennis_Crawler.Models.Crawler
 {
-    public class LeagueMatchCrawler : Crawler
+    public class TournamentCrawler : Crawler
     {
-        public LeagueMatchCrawler(MainWindowViewModel viewModel)
+        public TournamentCrawler(MainWindowViewModel viewModel)
             : base(viewModel)
         { }
 

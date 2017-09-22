@@ -17,7 +17,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         public bool ProcessPlayers { get; set; } = true;
 
-        public Team(LeagueMatchCrawler crawler)
+        public Team(Crawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_pnlTeamAnchor";
@@ -109,9 +109,6 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 {
                     foreach (var row in playersRows.Take(playersRows.Count() - 1).Skip(1))
                     {
-                        //playerActions.Add(ProcessPlayerRow(team, row.Cells[0].QuerySelector("a") as IHtmlAnchorElement, row.Cells[1].InnerHtml.Cleanse()));
-                        //playerActions.Add(ProcessPlayerRow(team, row.Cells[2].QuerySelector("a") as IHtmlAnchorElement, row.Cells[3].InnerHtml.Cleanse()));
-                        //playerActions.Add(ProcessPlayerRow(team, row.Cells[4].QuerySelector("a") as IHtmlAnchorElement, row.Cells[5].InnerHtml.Cleanse()));
                         var player1 = await ProcessPlayerRow(team, row.Cells[0].QuerySelector("a") as IHtmlAnchorElement, row.Cells[1].InnerHtml.Cleanse());
                         var player2 = await ProcessPlayerRow(team, row.Cells[2].QuerySelector("a") as IHtmlAnchorElement, row.Cells[3].InnerHtml.Cleanse());
                         var player3 = await ProcessPlayerRow(team, row.Cells[4].QuerySelector("a") as IHtmlAnchorElement, row.Cells[5].InnerHtml.Cleanse());
@@ -199,7 +196,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             var leagueText = leagueLink.InnerHtml.Cleanse();
 
             var league = new Repository().Get<tklLeague>(f =>
-                    f.LeagueYear == Crawler.Year &&
+                    f.LeagueYear == Crawler.ViewModel.Year &&
                     f.LeagueName == leagueText &&
                     f.AreaID == area.AreaID);
 
@@ -217,8 +214,8 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             var flightText = flightLink.InnerHtml.Cleanse();
             
             var flight = new Repository().Get<tklFlight>(f =>
-                f.FlightGender == Crawler.Gender &&
-                f.FlightLevel == Crawler.Rating &&
+                f.FlightGender == Crawler.ViewModel.Gender &&
+                f.FlightLevel == Crawler.ViewModel.Rating &&
                 f.LeagueID == league.LeagueID);
 
             if (flight == null)
@@ -298,7 +295,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 {
                     player = await new PlayerSeason(Crawler).CreateFormDataFor_FromTeam(link.Id, ReturnedViewstate).Post();
 
-                    if (player.InitialYear == Crawler.Year)
+                    if (player.InitialYear == Crawler.ViewModel.Year)
                     {
                         // TODO: This needs to be handled differently in production.
                         // Maybe in one of the dynamic rating tables?

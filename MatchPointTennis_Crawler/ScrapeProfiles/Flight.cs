@@ -14,7 +14,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     {
         private tklLeague League { get; set; }
 
-        public Flight(LeagueMatchCrawler crawler, tklLeague league)
+        public Flight(Crawler crawler, tklLeague league)
             : base(crawler)
         {
             League = league;
@@ -60,7 +60,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             flight = new tklFlight()
             {
                 USTAID = USTAId,
-                FlightGender = Crawler.Gender,
+                FlightGender = Crawler.ViewModel.Gender,
                 FlightLevel = ratingText,
                 LeagueID = League.LeagueID
             };
