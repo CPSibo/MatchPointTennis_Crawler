@@ -17,7 +17,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         public bool ProcessPlayers { get; set; } = true;
 
-        public Team(Crawler crawler)
+        public Team(LeagueMatchCrawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_pnlTeamAnchor";
@@ -276,9 +276,9 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
             if (link != null && link.Text.Length > 0)
             {
-                var fullname = link.InnerHtml.Cleanse().DecomposeName().FullName;
+                var fullname = link.InnerHtml.Cleanse().DecomposeName().FullName.ToLower();
 
-                var possiblePlayers = new Repository().GetAll<tklUserList>(f => f.FullName.ToLower() == fullname.ToLower());
+                var possiblePlayers = new Repository().GetAll<tklUserList>(f => f.FullName.ToLower() == fullname);
                 var teamPlayers = new Repository().GetAll<tklUserTeam>(f => f.TeamID == team.TeamID);
 
                 foreach (var possiblePlayer in possiblePlayers)
@@ -298,17 +298,20 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 {
                     player = await new PlayerSeason(Crawler).CreateFormDataFor_FromTeam(link.Id, ReturnedViewstate).Post();
 
-                    // TODO: This needs to be handled differently in production.
-                    // Maybe in one of the dynamic rating tables?
-                    if(decimal.TryParse(rating, out var parsedRating))
+                    if (player.InitialYear == Crawler.Year)
                     {
-                        player.InitialRating = parsedRating;
+                        // TODO: This needs to be handled differently in production.
+                        // Maybe in one of the dynamic rating tables?
+                        if (decimal.TryParse(rating, out var parsedRating))
+                        {
+                            player.InitialRating = parsedRating;
 
-                        new Repository().Edit(player).Save(player);
-                    }
-                    else
-                    {
+                            new Repository().Edit(player).Save(player);
+                        }
+                        else
+                        {
 
+                        }
                     }
                 }
 

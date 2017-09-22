@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Windows.Threading;
 
 namespace MatchPointTennis_Crawler.Models.Crawler
 {
-    public class Crawler : ObservableObject
+    public abstract class Crawler : ObservableObject
     {
         public int Year { get; set; }
 
@@ -53,6 +54,20 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             }
         }
 
+        private int _totalNumberOfItems = 0;
+
+        public int TotalNumberOfItems
+        {
+            get => _totalNumberOfItems;
+            set
+            {
+                _totalNumberOfItems = value;
+
+                NotifyPropertyChanged("TotalNumberOfItems");
+                NotifyPropertyChanged("TotalProgressText");
+            }
+        }
+
         private int _itemsProcessed = 0;
 
         public int ItemsProcessed
@@ -67,6 +82,20 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             }
         }
 
+        private int _totalItemsProcessed = 0;
+
+        public int TotalItemsProcessed
+        {
+            get => _totalItemsProcessed;
+            set
+            {
+                _totalItemsProcessed = value;
+
+                NotifyPropertyChanged("TotalItemsProcessed");
+                NotifyPropertyChanged("TotalProgressText");
+            }
+        }
+
         private TimeSpan _elapsed = TimeSpan.FromMilliseconds(0);
 
         public TimeSpan Elapsed
@@ -77,6 +106,19 @@ namespace MatchPointTennis_Crawler.Models.Crawler
                 _elapsed = value;
 
                 NotifyPropertyChanged("Elapsed");
+            }
+        }
+
+        private TimeSpan _totalElapsed = TimeSpan.FromMilliseconds(0);
+
+        public TimeSpan TotalElapsed
+        {
+            get => _totalElapsed;
+            set
+            {
+                _totalElapsed = value;
+
+                NotifyPropertyChanged("TotalElapsed");
             }
         }
 
@@ -106,9 +148,22 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             }
         }
 
-        private string _numberOfBytes;
+        private UInt64 _totalNumberOfRequests;
 
-        public string NumberOfBytes
+        public UInt64 TotalNumberOfRequests
+        {
+            get => _totalNumberOfRequests;
+            set
+            {
+                _totalNumberOfRequests = value;
+
+                NotifyPropertyChanged("TotalNumberOfRequests");
+            }
+        }
+
+        private long _numberOfBytes;
+
+        public long NumberOfBytes
         {
             get => _numberOfBytes;
             set
@@ -119,11 +174,24 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             }
         }
 
+        private long _totalNumberOfBytes;
+
+        public long TotalNumberOfBytes
+        {
+            get => _totalNumberOfBytes;
+            set
+            {
+                _totalNumberOfBytes = value;
+
+                NotifyPropertyChanged("TotalNumberOfBytes");
+            }
+        }
+
         public string ProgressText => $"{ItemsProcessed}/{NumberOfItems}";
 
-        private Stopwatch ElapsedTimer { get; set; } = new Stopwatch();
+        protected Stopwatch ElapsedTimer { get; set; } = new Stopwatch();
 
-        private Timer UpdateTimer { get; set; } = new Timer(1000);
+        protected DispatcherTimer UpdateTimer { get; set; } = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1) };
 
         public Crawler()
         {
@@ -131,35 +199,41 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             Section = "USTA/INTERMOUNTAIN";
             District = "COLORADO";
             Gender = "Female";
-            Rating = 2.0M;
+            Rating = 0.0M;
 
-            UpdateTimer.AutoReset = true;
-            UpdateTimer.Elapsed += UpdateTimer_Elapsed;
+            UpdateTimer.Tick += UpdateTimer_Tick;
 
             Mediator.Instance.Register((object args) =>
             {
                 ItemsProcessed++;
+                TotalItemsProcessed++;
             }, ViewModelMessages.TeamProcessed);
 
             Mediator.Instance.Register((object args) =>
             {
                 NumberOfItems = (int)args;
+                TotalNumberOfItems += (int)args;
             }, ViewModelMessages.TeamsCollected);
 
             Mediator.Instance.Register((object args) =>
             {
                 NumberOfRequests++;
+                TotalNumberOfRequests++;
             }, ViewModelMessages.RequestSent);
 
             Mediator.Instance.Register((object args) =>
             {
-                NumberOfBytes = ((long)args).BytesToString();
+                NumberOfBytes += (long)args;
+                TotalNumberOfBytes += (long)args;
             }, ViewModelMessages.RequestReceived);
         }
 
-        private void UpdateTimer_Elapsed(object sender, ElapsedEventArgs e)
+        private void UpdateTimer_Tick(object sender, EventArgs e)
         {
+            var lastElapsed = Elapsed;
             Elapsed = ElapsedTimer.Elapsed;
+            var diff = Elapsed - lastElapsed;
+            TotalElapsed += diff;
 
             if (ItemsProcessed > 0)
             {
@@ -171,57 +245,30 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             }
         }
 
-        public async Task Search()
+        public void ResetStats()
         {
-            Log = new StringBuilder();
-
-            if (Rating > 0)
-            {
-                await RunSearch(Rating);
-            }
-            else
-            {
-                var rating = 2.0m;
-
-                while (rating < 12.5m)
-                {
-                    await RunSearch(rating);
-
-                    rating += 0.5m;
-                }
-            }
-
-            Log.Append("FINISHED!");
-            Log = Log;
-        }
-
-        protected async Task RunSearch(decimal rating)
-        {
-            _itemsProcessed = 0;
-            _numberOfBytes = "";
-            _numberOfRequests = 0;
             Browser.NumberOfRequests = 0;
             Browser.NumberOfBytesTransfered = 0;
 
-            var viewstate = await Browser.GetInitialViewState(Year.ToString(), Section, District);
+            ItemsProcessed = 0;
+            NumberOfItems = 0;
+            NumberOfBytes = 0;
+            NumberOfRequests = 0;
+            Elapsed = TimeSpan.FromSeconds(0);
+            ETA = TimeSpan.FromSeconds(0);
 
-            ElapsedTimer.Restart();
-            UpdateTimer.Start();
+            TotalItemsProcessed = 0;
+            TotalNumberOfItems = 0;
+            TotalNumberOfBytes = 0;
+            TotalNumberOfRequests = 0;
+            TotalElapsed = TimeSpan.FromSeconds(0);
 
-            await new ScrapeProfiles.LeagueSearch_Teams(this)
-                .CreateFormDataFor_TeamSearch
-                (
-                    viewstate: viewstate,
-                    gender: Gender.Substring(0, 1),
-                    rating: rating.ToString("0.0")
-                )
-                .Post();
+            Log = new StringBuilder();
 
             ElapsedTimer.Stop();
-
-            Log.Append($"Finished {Section} | {District} | {Area} | {Gender} | {Year} | {rating}{Environment.NewLine}");
-            Log.Append($"\t{Elapsed:dd\\.hh\\:mm\\:ss} | {NumberOfRequests} Requests | {NumberOfBytes}{Environment.NewLine}{Environment.NewLine}");
-            Log = Log;
+            UpdateTimer.Stop();
         }
+
+        public abstract Task Search();
     }
 }

@@ -25,7 +25,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             public string Flight { get; set; }
         }
 
-        public LeagueSearch_Teams(Crawler crawler)
+        public LeagueSearch_Teams(LeagueMatchCrawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_divSearchResultsForTeams";

@@ -14,7 +14,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     {
         private tklLeague League { get; set; }
 
-        public Flight(Crawler crawler, tklLeague league)
+        public Flight(LeagueMatchCrawler crawler, tklLeague league)
             : base(crawler)
         {
             League = league;

@@ -115,8 +115,9 @@ namespace MatchPointTennis_Crawler
 
             var content = await response?.Content.ReadAsStringAsync();
 
-            NumberOfBytesTransfered += System.Text.ASCIIEncoding.ASCII.GetByteCount(content);
-            Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestReceived, NumberOfBytesTransfered);
+            var bytes = Convert.ToInt64(System.Text.ASCIIEncoding.ASCII.GetByteCount(content));
+            NumberOfBytesTransfered += bytes;
+            Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestReceived, bytes);
 
             watch.Stop();
 
@@ -143,18 +144,30 @@ namespace MatchPointTennis_Crawler
             // Get a blank viewstate to seed everything else.
             var response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>(), true);
             var viewstate = Parser.GetViewState(response);
+            var doc = await Parser.Parse(response);
 
-            response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
+            string sectionId;
+
+            if (!doc.Query("#ctl00_mainContent_ddlChampYear").OptionWithText(year).IsSelected)
             {
-                {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlChampYear"},
-                {"__EVENTTARGET", "ctl00$mainContent$ddlChampYear"},
-                {"__EVENTARGUMENT", ""},
-                {"__ASYNCPOST", "true"},
-                {"ctl00$mainContent$ddlChampYear", year},
-                {"__VIEWSTATE", viewstate},
-            }, true);
-            viewstate = Parser.GetViewState(response);
-            var sectionId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlSection").OptionWithText(section)?.Value;
+                response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
+                {
+                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlChampYear"},
+                    {"__EVENTTARGET", "ctl00$mainContent$ddlChampYear"},
+                    {"__EVENTARGUMENT", ""},
+                    {"__ASYNCPOST", "true"},
+                    {"ctl00$mainContent$ddlChampYear", year},
+                    {"__VIEWSTATE", viewstate},
+                }, true);
+
+                viewstate = Parser.GetViewState(response);
+
+                sectionId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlSection").OptionWithText(section)?.Value;
+            }
+            else
+            {
+                sectionId = doc.Query("#ctl00_mainContent_ddlSection").OptionWithText(section)?.Value;
+            }
 
             if(sectionId == null)
             {

@@ -22,6 +22,17 @@ namespace MatchPointTennis_Crawler.ViewModels
                 NotifyPropertyChanged("Crawler");
             }
         }
+        public int Year { get; set; } = 2014;
+
+        public string Section { get; set; } = "USTA/INTERMOUNTAIN";
+
+        public string District { get; set; } = "COLORADO";
+
+        public string Area { get; set; }
+
+        public string Gender { get; set; } = "Female";
+
+        public decimal Rating { get; set; } = 0.0m;
 
         private bool _isRunning = false;
 
@@ -41,7 +52,6 @@ namespace MatchPointTennis_Crawler.ViewModels
 
         public MainWindowViewModel()
         {
-            Crawler = new Crawler();
         }
 
         public ICommand Search => new DelegateCommand(() =>
@@ -52,6 +62,8 @@ namespace MatchPointTennis_Crawler.ViewModels
         protected async Task DoSearch()
         {
             IsRunning = true;
+
+            Crawler = new LeagueMatchCrawler();
 
             await Crawler.Search();
 

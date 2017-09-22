@@ -16,6 +16,12 @@ namespace MatchPointTennis_Crawler
     {
         private static HtmlParser HtmlParser { get; set; } = new HtmlParser(Configuration.Default);
 
+        private const string VIEWSTATE_PATTERN_1 = "(?>__VIEWSTATE\\|(\\S+?)(?>\\||$))";
+
+        private const string VIEWSTATE_PATTERN_2 = "(?>id=\"__VIEWSTATE\"\\s*value=\"(\\S+?)\")";
+
+        private const string MAIN_CONTENT_PATTERN = @"\|\d+?\|updatePanel\|ctl00_mainContent_UpdatePanel1\|(.+?)\|\d*?\|.*?\|";
+
         public async static Task<IHtmlDocument> Parse(string markup)
         {
             return await HtmlParser.ParseAsync(markup);
@@ -68,14 +74,11 @@ namespace MatchPointTennis_Crawler
 
         public static string GetViewState(string response)
         {
-            var pattern = "(?>__VIEWSTATE\\|(\\S+?)(?>\\||$))";
-            var match = Regex.Match(response, pattern, RegexOptions.Multiline).Groups[1].Value;
+            var match = Regex.Match(response, VIEWSTATE_PATTERN_1, RegexOptions.Multiline).Groups[1].Value;
 
             if (string.IsNullOrWhiteSpace(match))
             {
-                pattern = "(?>id=\"__VIEWSTATE\"\\s*value=\"(\\S+?)\")";
-
-                match = Regex.Match(response, pattern, RegexOptions.Multiline).Groups[1].Value;
+                match = Regex.Match(response, VIEWSTATE_PATTERN_2, RegexOptions.Multiline).Groups[1].Value;
             }
 
             return match;
@@ -83,9 +86,7 @@ namespace MatchPointTennis_Crawler
 
         public static string GetMainContent(string response)
         {
-            var pattern = @"\|\d+?\|updatePanel\|ctl00_mainContent_UpdatePanel1\|(.+?)\|\d*?\|.*?\|";
-
-            return Regex.Match(response, pattern, RegexOptions.Singleline | RegexOptions.IgnoreCase).Groups[1].Value;
+            return Regex.Match(response, MAIN_CONTENT_PATTERN, RegexOptions.Singleline | RegexOptions.IgnoreCase).Groups[1].Value;
         }
     }
 }

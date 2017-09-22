@@ -24,9 +24,9 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected string ReturnedViewstate { get; set; }
 
-        protected Crawler Crawler { get; set; }
+        protected LeagueMatchCrawler Crawler { get; set; }
 
-        public ScrapeProfile(Crawler crawler)
+        public ScrapeProfile(LeagueMatchCrawler crawler)
         {
             Crawler = crawler;
         }

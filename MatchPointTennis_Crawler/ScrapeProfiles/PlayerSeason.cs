@@ -12,7 +12,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     public class PlayerSeason
         : ScrapeProfile<tklUserList>
     {
-        public PlayerSeason(Crawler crawler)
+        public PlayerSeason(LeagueMatchCrawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_tblIndividualAnchor";
@@ -64,7 +64,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 {
                     USTAID = USTAId,
                     FullName = normalizedName.FullName,
-                    City = cityText,
+                    City = cityText.ToLower(),
                     State = stateText.ToUpper(),
                     InitialYear = year,
                     CurrentYear = year,

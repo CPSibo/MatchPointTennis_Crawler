@@ -12,7 +12,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
     public class League
         : ScrapeProfile<tklLeague>
     {
-        public League(Crawler crawler)
+        public League(LeagueMatchCrawler crawler)
             : base(crawler)
         {
             LoadedElementID = "#ctl00_mainContent_tblLeagueAnchor";
