@@ -10,9 +10,9 @@ using System.Windows.Threading;
 
 namespace MatchPointTennis_Crawler.Models.Crawler
 {
-    public class LeagueMatchCrawler : Crawler
+    public class ChampionshipCrawler : Crawler
     {
-        public LeagueMatchCrawler(MainWindowViewModel viewModel)
+        public ChampionshipCrawler(MainWindowViewModel viewModel)
             : base(viewModel)
         { }
 
@@ -74,34 +74,26 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
         public async Task<string> GetInitialViewState()
         {
-            string sectionId;
-            string districtId;
-
-            var postData = new Dictionary<string, string>()
-            {
-                {"ctl00$ScriptManager1", ""},
-                {"__EVENTTARGET", ""},
-                {"__EVENTARGUMENT", ""},
-                {"__ASYNCPOST", "true"},
-                {"ctl00$mainContent$ddlChampYear", ViewModel.Year.ToString()},
-                {"__VIEWSTATE", ""},
-            };
-
-            string searchPage = "/leagues/Main/StatsAndStandings.aspx";
-
             // Get a blank viewstate to seed everything else.
-            var response = await Browser.SendRequest(searchPage, null, true);
-            postData["__VIEWSTATE"] = Parser.GetViewState(response);
+            var response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>(), true);
+            var viewstate = Parser.GetViewState(response);
             var doc = await Parser.Parse(response);
 
-            if (!doc.Query("#ctl00_mainContent_ddlChampYear").OptionWithText(ViewModel.Year.ToString()).IsSelected)
+            string sectionId;
+
+            if (!doc.Query("#ctl00_mainContent_ddlCYear").OptionWithText(ViewModel.Year.ToString()).IsSelected)
             {
-                postData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlChampYear";
-                postData["__EVENTTARGET"] = "ctl00$mainContent$ddlChampYear";
+                response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
+                {
+                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlCYear"},
+                    {"__EVENTTARGET", "ctl00$mainContent$ddlCYear"},
+                    {"__EVENTARGUMENT", ""},
+                    {"__ASYNCPOST", "true"},
+                    {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
+                    {"__VIEWSTATE", viewstate},
+                }, true);
 
-                response = await Browser.SendRequest(searchPage, postData, true);
-
-                postData["__VIEWSTATE"] = Parser.GetViewState(response);
+                viewstate = Parser.GetViewState(response);
 
                 sectionId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlSection").OptionWithText(ViewModel.Section)?.Value;
             }
@@ -117,15 +109,19 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
             // TODO: INSERT all sections into db.
 
-            postData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlSection";
-            postData["__EVENTTARGET"] = "ctl00$mainContent$ddlSection";
-            postData.Add("ctl00$mainContent$ddlSection", sectionId);
-
-            response = await Browser.SendRequest(searchPage, postData, true);
-
-            postData["__VIEWSTATE"] = Parser.GetViewState(response);
-
-            districtId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlDistrict").OptionWithText(ViewModel.District)?.Value;
+            response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
+            {
+                {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlSection"},
+                {"__EVENTTARGET", "ctl00$mainContent$ddlSection"},
+                {"__EVENTARGUMENT", ""},
+                {"__ASYNCPOST", "true"},
+                {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
+                {"ctl00$mainContent$ddlSection", sectionId},
+                {"ctl00$mainContent$ddlGenderChampion", ViewModel.Gender.ToUpper()[0].ToString()},
+                {"__VIEWSTATE", viewstate},
+            }, true);
+            viewstate = Parser.GetViewState(response);
+            var districtId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlDistrict").OptionWithText(ViewModel.District)?.Value;
 
             if (districtId == null)
             {
@@ -136,19 +132,25 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
             if (ViewModel.District != null)
             {
-                postData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlDistrict";
-                postData["__EVENTTARGET"] = "ctl00$mainContent$ddlDistrict";
-                postData.Add("ctl00$mainContent$ddlDistrict", districtId);
-
-                response = await Browser.SendRequest(searchPage, postData, true);
-
-                postData["__VIEWSTATE"] = Parser.GetViewState(response);
+                response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
+                {
+                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlDistrict"},
+                    {"__EVENTTARGET", "ctl00$mainContent$ddlDistrict"},
+                    {"__EVENTARGUMENT", ""},
+                    {"__ASYNCPOST", "true"},
+                    {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
+                    {"ctl00$mainContent$ddlSection", sectionId},
+                    {"ctl00$mainContent$ddlDistrict", districtId},
+                    {"ctl00$mainContent$ddlGenderChampion", ViewModel.Gender.ToUpper()[0].ToString()},
+                    {"__VIEWSTATE", viewstate},
+                }, true);
+                viewstate = Parser.GetViewState(response);
 
                 // TODO: INSERT all areas into db.
                 // OR do insertion on team page. We don't care about the IDs, just the name.
             }
 
-            return postData["__VIEWSTATE"];
+            return viewstate;
         }
     }
 }

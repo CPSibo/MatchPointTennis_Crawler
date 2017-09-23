@@ -37,10 +37,10 @@ namespace MatchPointTennis_Crawler.ViewModels
         public List<string> Modes { get; set; } = new List<string>()
         {
             "League Matches" ,
-            "Tournaments",
+            "Championships",
             "Player Rating Types",
             "Dropdowns",
-            "Championships"
+            "Tournaments",
         };
 
         public int Mode { get; set; } = 0;
@@ -79,7 +79,7 @@ namespace MatchPointTennis_Crawler.ViewModels
                     break;
 
                 case 1:
-                    Crawler = new TournamentCrawler(this);
+                    Crawler = new ChampionshipCrawler(this);
                     break;
 
                 case 2:

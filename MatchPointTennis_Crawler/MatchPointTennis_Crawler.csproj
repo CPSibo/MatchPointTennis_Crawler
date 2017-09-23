@@ -82,7 +82,7 @@
     <Compile Include="Extensions\LongExtensions.cs" />
     <Compile Include="Mediator.cs" />
     <Compile Include="Models\Crawler\Crawler.cs" />
-    <Compile Include="Models\Crawler\TournamentCrawler.cs" />
+    <Compile Include="Models\Crawler\ChampionshipCrawler.cs" />
     <Compile Include="Models\Crawler\LeagueMatchCrawler.cs" />
     <Compile Include="Models\tblMatch.cs" />
     <Compile Include="Models\tblTeamMatch.cs" />

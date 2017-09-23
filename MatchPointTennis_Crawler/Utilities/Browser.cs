@@ -41,7 +41,7 @@ namespace MatchPointTennis_Crawler
                 Timeout = TimeSpan.FromSeconds(REQUEST_TIMEOUT),
             };
 
-            client.DefaultRequestHeaders.Referrer = new Uri("http://tennislink.usta.com/leagues/Main/StatsAndStandings.aspx?SearchType=3");
+            client.DefaultRequestHeaders.Referrer = new Uri("http://tennislink.usta.com");
 
             client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
             client.DefaultRequestHeaders.Add("X-MicrosoftAjax", "Delta=true");
@@ -57,6 +57,11 @@ namespace MatchPointTennis_Crawler
 
         public static string CreatePostData(Dictionary<string, string> content)
         {
+            if(content == null)
+            {
+                return "";
+            }
+
             var sb = new StringBuilder();
             foreach (var item in content)
             {
@@ -115,7 +120,7 @@ namespace MatchPointTennis_Crawler
 
             var content = await response?.Content.ReadAsStringAsync();
 
-            var bytes = Convert.ToInt64(System.Text.ASCIIEncoding.ASCII.GetByteCount(content));
+            var bytes = Convert.ToInt64(Encoding.ASCII.GetByteCount(content));
             NumberOfBytesTransfered += bytes;
             Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestReceived, bytes);
 
@@ -130,92 +135,13 @@ namespace MatchPointTennis_Crawler
             return content;
         }
 
-        public static async Task<string> SendRequest(string path, Dictionary<string, string> content, bool bypassThrottle = false)
+        public static async Task<string> SendRequest(string path, Dictionary<string, string> content = null, bool bypassThrottle = false)
         {
             var stringContent = CreatePostData(content);
 
             var request = CreateRequest(path, stringContent);
 
             return await SendRequest(request, bypassThrottle);
-        }
-
-        public static async Task<string> GetInitialViewState(string year, string section, string district = null)
-        {
-            // Get a blank viewstate to seed everything else.
-            var response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>(), true);
-            var viewstate = Parser.GetViewState(response);
-            var doc = await Parser.Parse(response);
-
-            string sectionId;
-
-            if (!doc.Query("#ctl00_mainContent_ddlChampYear").OptionWithText(year).IsSelected)
-            {
-                response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-                {
-                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlChampYear"},
-                    {"__EVENTTARGET", "ctl00$mainContent$ddlChampYear"},
-                    {"__EVENTARGUMENT", ""},
-                    {"__ASYNCPOST", "true"},
-                    {"ctl00$mainContent$ddlChampYear", year},
-                    {"__VIEWSTATE", viewstate},
-                }, true);
-
-                viewstate = Parser.GetViewState(response);
-
-                sectionId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlSection").OptionWithText(section)?.Value;
-            }
-            else
-            {
-                sectionId = doc.Query("#ctl00_mainContent_ddlSection").OptionWithText(section)?.Value;
-            }
-
-            if(sectionId == null)
-            {
-                throw new Exception($"Section '{section}' not found!");
-            }
-
-            // TODO: INSERT all sections into db.
-
-            response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-            {
-                {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlSection"},
-                {"__EVENTTARGET", "ctl00$mainContent$ddlSection"},
-                {"__EVENTARGUMENT", ""},
-                {"__ASYNCPOST", "true"},
-                {"ctl00$mainContent$ddlChampYear", year},
-                {"ctl00$mainContent$ddlSection", sectionId},
-                {"__VIEWSTATE", viewstate},
-            }, true);
-            viewstate = Parser.GetViewState(response);
-            var districtId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlDistrict").OptionWithText(district)?.Value;
-
-            if (districtId == null)
-            {
-                throw new Exception($"District '{district}' not found!");
-            }
-
-            // TODO: INSERT all districts into db.
-
-            if (district != null)
-            {
-                response = await SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-                {
-                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlDistrict"},
-                    {"__EVENTTARGET", "ctl00$mainContent$ddlDistrict"},
-                    {"__EVENTARGUMENT", ""},
-                    {"__ASYNCPOST", "true"},
-                    {"ctl00$mainContent$ddlChampYear", year},
-                    {"ctl00$mainContent$ddlSection", sectionId},
-                    {"ctl00$mainContent$ddlDistrict", districtId},
-                    {"__VIEWSTATE", viewstate},
-                }, true);
-                viewstate = Parser.GetViewState(response);
-
-                // TODO: INSERT all areas into db.
-                // OR do insertion on team page. We don't care about the IDs, just the name.
-            }
-
-            return viewstate;
         }
     }
 }
