@@ -55,6 +55,7 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             NumberOfRequests = 0;
             Browser.NumberOfRequests = 0;
             Browser.NumberOfBytesTransfered = 0;
+            ElapsedTimer.Restart();
 
             var viewstate = await GetInitialViewState();
 
