@@ -98,6 +98,7 @@
     <Compile Include="Models\tklUserTeam.cs" />
     <Compile Include="Models\tklYear.cs" />
     <Compile Include="ObservableObject.cs" />
+    <Compile Include="ScrapeProfiles\ChampionshipSearch_Flight.cs" />
     <Compile Include="Utilities\AutoScrollBehavior.cs" />
     <Compile Include="Utilities\Browser.cs" />
     <Compile Include="Extensions\IHtmlElementExtensions.cs" />

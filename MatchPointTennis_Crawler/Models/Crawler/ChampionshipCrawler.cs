@@ -63,7 +63,7 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             (var postData, var doc) = await GetInitialViewState(rating.ToString("0.0"));
 
             // Permutate areas...
-            foreach (var area in ((IHtmlSelectElement)doc.Query("#ctl00_mainContent_ddlAreaChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+            foreach (var area in ((IHtmlSelectElement)doc.Query("#ctl00_mainContent_ddlAreaChampion")).Options.Where(f => f.Value != "0").Select(f => f.Text))
             {
                 var areaPostData = SelectIntoPostData(postData, doc,
                    "ctl00_mainContent_ddlAreaChampion", "ctl00$mainContent$ddlAreaChampion", area);
@@ -72,18 +72,18 @@ namespace MatchPointTennis_Crawler.Models.Crawler
                 var areaDoc = await Parser.Parse(response);
 
                 // Permutate leagues...
-                foreach (var league in ((IHtmlSelectElement)areaDoc.Query("#ctl00_mainContent_ddlLeagueChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+                foreach (var league in ((IHtmlSelectElement)areaDoc.Query("#ctl00_mainContent_ddlLeagueChampion")).Options.Where(f => f.Value != "0").Select(f => f.Text))
                 {
-                    var leaguePostData = SelectIntoPostData(areaPostData, doc,
+                    var leaguePostData = SelectIntoPostData(areaPostData, areaDoc,
                        "ctl00_mainContent_ddlLeagueChampion", "ctl00$mainContent$ddlLeagueChampion", league);
                     response = await Browser.SendRequest(searchPage, leaguePostData, true);
                     leaguePostData["__VIEWSTATE"] = Parser.GetViewState(response);
                     var leagueDoc = await Parser.Parse(response);
 
                     // Permutate flights...
-                    foreach (var flight in ((IHtmlSelectElement)leagueDoc.Query("#ctl00_mainContent_ddlFlightChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+                    foreach (var flight in ((IHtmlSelectElement)leagueDoc.Query("#ctl00_mainContent_ddlFlightChampion")).Options.Where(f => f.Value != "0").Select(f => f.Text))
                     {
-                        var flightPostData = SelectIntoPostData(leaguePostData, doc,
+                        var flightPostData = SelectIntoPostData(leaguePostData, leagueDoc,
                            "ctl00_mainContent_ddlFlightChampion", "ctl00$mainContent$ddlFlightChampion", flight);
                         response = await Browser.SendRequest(searchPage, flightPostData, true);
                         flightPostData["__VIEWSTATE"] = Parser.GetViewState(response);
@@ -91,24 +91,9 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
 
 
-                        // Click the search button.
-                        flightPostData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$btn_Flight";
-                        flightPostData.Add("ctl00$mainContent$btn_Flight", "View Flight Championships");
-
-
-
-                        await new ScrapeProfiles.LeagueSearch_Teams(this)
-                            .CreateFormDataFor_TeamSearch
-                            (
-                                viewstate: flightPostData["__VIEWSTATE"],
-                                gender: ViewModel.Gender.Substring(0, 1),
-                                rating: rating.ToString("0.0")
-                            )
+                        await new ScrapeProfiles.ChampionshipSearch_Flight(this)
+                            .CreateFormDataFor_FlightSearch(flightPostData)
                             .Post();
-
-
-
-                        flightPostData.Remove("ctl00$mainContent$btn_Flight");
                     }
                 }
             }
