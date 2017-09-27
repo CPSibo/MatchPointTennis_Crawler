@@ -1,4 +1,5 @@
-﻿using MatchPointTennis_Crawler.ViewModels;
+﻿using AngleSharp.Dom.Html;
+using MatchPointTennis_Crawler.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -50,107 +51,180 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
         protected async Task RunSearch(decimal rating)
         {
+            string response;
+            string searchPage = "/leagues/Main/StatsAndStandings.aspx";
+
             ItemsProcessed = 0;
             NumberOfBytes = 0;
             NumberOfRequests = 0;
             Browser.NumberOfRequests = 0;
             Browser.NumberOfBytesTransfered = 0;
 
-            var viewstate = await GetInitialViewState();
+            (var postData, var doc) = await GetInitialViewState(rating.ToString("0.0"));
 
-            await new ScrapeProfiles.LeagueSearch_Teams(this)
-                .CreateFormDataFor_TeamSearch
-                (
-                    viewstate: viewstate,
-                    gender: ViewModel.Gender.Substring(0, 1),
-                    rating: rating.ToString("0.0")
-                )
-                .Post();
+            // Permutate areas...
+            foreach (var area in ((IHtmlSelectElement)doc.Query("#ctl00_mainContent_ddlAreaChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+            {
+                var areaPostData = SelectIntoPostData(postData, doc,
+                   "ctl00_mainContent_ddlAreaChampion", "ctl00$mainContent$ddlAreaChampion", area);
+                response = await Browser.SendRequest(searchPage, areaPostData, true);
+                areaPostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                var areaDoc = await Parser.Parse(response);
+
+                // Permutate leagues...
+                foreach (var league in ((IHtmlSelectElement)areaDoc.Query("#ctl00_mainContent_ddlLeagueChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+                {
+                    var leaguePostData = SelectIntoPostData(areaPostData, doc,
+                       "ctl00_mainContent_ddlLeagueChampion", "ctl00$mainContent$ddlLeagueChampion", league);
+                    response = await Browser.SendRequest(searchPage, leaguePostData, true);
+                    leaguePostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                    var leagueDoc = await Parser.Parse(response);
+
+                    // Permutate flights...
+                    foreach (var flight in ((IHtmlSelectElement)leagueDoc.Query("#ctl00_mainContent_ddlFlightChampion")).Options.Where(f => f.Value != "0").Select(f => f.Value))
+                    {
+                        var flightPostData = SelectIntoPostData(leaguePostData, doc,
+                           "ctl00_mainContent_ddlFlightChampion", "ctl00$mainContent$ddlFlightChampion", flight);
+                        response = await Browser.SendRequest(searchPage, flightPostData, true);
+                        flightPostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                        var flightDoc = await Parser.Parse(response);
+
+
+
+                        // Click the search button.
+                        flightPostData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$btn_Flight";
+                        flightPostData.Add("ctl00$mainContent$btn_Flight", "View Flight Championships");
+
+
+
+                        await new ScrapeProfiles.LeagueSearch_Teams(this)
+                            .CreateFormDataFor_TeamSearch
+                            (
+                                viewstate: flightPostData["__VIEWSTATE"],
+                                gender: ViewModel.Gender.Substring(0, 1),
+                                rating: rating.ToString("0.0")
+                            )
+                            .Post();
+
+
+
+                        flightPostData.Remove("ctl00$mainContent$btn_Flight");
+                    }
+                }
+            }
 
             Log.Append($"Finished {ViewModel.Section} | {ViewModel.District} | {ViewModel.Area} | {ViewModel.Gender} | {ViewModel.Year} | {rating}{Environment.NewLine}");
             Log.Append($"\t{Elapsed:dd\\.hh\\:mm\\:ss} | {NumberOfRequests} Requests | {NumberOfBytes}{Environment.NewLine}{Environment.NewLine}");
             Log = Log;
         }
 
-        public async Task<string> GetInitialViewState()
+        public async Task<(Dictionary<string, string>, IHtmlDocument)> GetInitialViewState(string rating)
         {
+            /*
+             * GET BASE VIEWSTATE
+             */
+            var postData = new Dictionary<string, string>()
+            {
+                {"ctl00$ScriptManager1", ""},
+                {"__EVENTTARGET", ""},
+                {"__EVENTARGUMENT", ""},
+                {"__ASYNCPOST", "true"},
+                {"__VIEWSTATE", ""},
+            };
+
+            string searchPage = "/leagues/Main/StatsAndStandings.aspx";
+
             // Get a blank viewstate to seed everything else.
-            var response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>(), true);
-            var viewstate = Parser.GetViewState(response);
+            var response = await Browser.SendRequest(searchPage, null, true);
+            postData["__VIEWSTATE"] = Parser.GetViewState(response);
             var doc = await Parser.Parse(response);
 
-            string sectionId;
 
-            if (!doc.Query("#ctl00_mainContent_ddlCYear").OptionWithText(ViewModel.Year.ToString()).IsSelected)
+
+            /*
+             * SELECT YEAR
+             */
+            postData = SelectIntoPostData(postData, doc,
+                "ctl00_mainContent_ddlCYear", "ctl00$mainContent$ddlCYear", ViewModel.Year.ToString());
+            response = await Browser.SendRequest(searchPage, postData, true);
+            postData["__VIEWSTATE"] = Parser.GetViewState(response);
+            doc = await Parser.Parse(response);
+
+
+
+            /*
+             * ADD NON-POSTBACK SELECTIONS
+             */
+            postData.Add("ctl00$mainContent$ddlNTRPlevelChampionlevel", rating);
+            postData.Add("ctl00$mainContent$ddlGenderChampion", ViewModel.Gender.ToUpper()[0].ToString());
+
+
+
+            /*
+             * SELECT LEVEL
+             */
+            postData = SelectIntoPostData(postData, doc, 
+                "ctl00_mainContent_ddlClevel", "ctl00$mainContent$ddlClevel", "Flight Championships");
+            response = await Browser.SendRequest(searchPage, postData, true);
+            postData["__VIEWSTATE"] = Parser.GetViewState(response);
+            doc = await Parser.Parse(response);
+
+
+
+            /*
+             * SELECT SECTION
+             */
+            postData = SelectIntoPostData(postData, doc,
+                "ctl00_mainContent_ddlSectionChampion", "ctl00$mainContent$ddlSectionChampion", ViewModel.Section);
+            response = await Browser.SendRequest(searchPage, postData, true);
+            postData["__VIEWSTATE"] = Parser.GetViewState(response);
+            doc = await Parser.Parse(response);
+
+
+
+            /*
+             * SELECT DISTRICT
+             */
+            postData = SelectIntoPostData(postData, doc,
+                "ctl00_mainContent_ddlDistrictChampion", "ctl00$mainContent$ddlDistrictChampion", ViewModel.District);
+            response = await Browser.SendRequest(searchPage, postData, true);
+            postData["__VIEWSTATE"] = Parser.GetViewState(response);
+            doc = await Parser.Parse(response);
+
+
+
+            return (postData, doc);
+        }
+
+        protected Dictionary<string, string> SelectIntoPostData
+        (
+            Dictionary<string, string> postData, 
+            IHtmlDocument doc,
+            string elementId,
+            string elementName,
+            string valueToSelect
+        )
+        {
+            var selectionValue = doc.Query($"#{elementId}").OptionWithText(valueToSelect)?.Value;
+
+            if (selectionValue == null)
             {
-                response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-                {
-                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlCYear"},
-                    {"__EVENTTARGET", "ctl00$mainContent$ddlCYear"},
-                    {"__EVENTARGUMENT", ""},
-                    {"__ASYNCPOST", "true"},
-                    {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
-                    {"__VIEWSTATE", viewstate},
-                }, true);
+                throw new Exception($"Value '{valueToSelect}' not found!");
+            }
 
-                viewstate = Parser.GetViewState(response);
+            postData["ctl00$ScriptManager1"] = $"ctl00$mainContent$UpdatePanel1|{elementName}";
+            postData["__EVENTTARGET"] = elementName;
 
-                sectionId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlSection").OptionWithText(ViewModel.Section)?.Value;
+            if(postData.ContainsKey(elementName))
+            {
+                postData[elementName] = selectionValue;
             }
             else
             {
-                sectionId = doc.Query("#ctl00_mainContent_ddlSection").OptionWithText(ViewModel.Section)?.Value;
+                postData.Add(elementName, selectionValue);
             }
 
-            if (sectionId == null)
-            {
-                throw new Exception($"Section '{ViewModel.Section}' not found!");
-            }
-
-            // TODO: INSERT all sections into db.
-
-            response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-            {
-                {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlSection"},
-                {"__EVENTTARGET", "ctl00$mainContent$ddlSection"},
-                {"__EVENTARGUMENT", ""},
-                {"__ASYNCPOST", "true"},
-                {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
-                {"ctl00$mainContent$ddlSection", sectionId},
-                {"ctl00$mainContent$ddlGenderChampion", ViewModel.Gender.ToUpper()[0].ToString()},
-                {"__VIEWSTATE", viewstate},
-            }, true);
-            viewstate = Parser.GetViewState(response);
-            var districtId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlDistrict").OptionWithText(ViewModel.District)?.Value;
-
-            if (districtId == null)
-            {
-                throw new Exception($"District '{ViewModel.District}' not found!");
-            }
-
-            // TODO: INSERT all districts into db.
-
-            if (ViewModel.District != null)
-            {
-                response = await Browser.SendRequest("/leagues/Main/StatsAndStandings.aspx", new Dictionary<string, string>()
-                {
-                    {"ctl00$ScriptManager1", "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlDistrict"},
-                    {"__EVENTTARGET", "ctl00$mainContent$ddlDistrict"},
-                    {"__EVENTARGUMENT", ""},
-                    {"__ASYNCPOST", "true"},
-                    {"ctl00$mainContent$ddlCYear", ViewModel.Year.ToString()},
-                    {"ctl00$mainContent$ddlSection", sectionId},
-                    {"ctl00$mainContent$ddlDistrict", districtId},
-                    {"ctl00$mainContent$ddlGenderChampion", ViewModel.Gender.ToUpper()[0].ToString()},
-                    {"__VIEWSTATE", viewstate},
-                }, true);
-                viewstate = Parser.GetViewState(response);
-
-                // TODO: INSERT all areas into db.
-                // OR do insertion on team page. We don't care about the IDs, just the name.
-            }
-
-            return viewstate;
+            return postData;
         }
     }
 }

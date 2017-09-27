@@ -95,6 +95,8 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             postData["__VIEWSTATE"] = Parser.GetViewState(response);
             var doc = await Parser.Parse(response);
 
+
+
             if (!doc.Query("#ctl00_mainContent_ddlChampYear").OptionWithText(ViewModel.Year.ToString()).IsSelected)
             {
                 postData["ctl00$ScriptManager1"] = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$ddlChampYear";
@@ -126,13 +128,15 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
             postData["__VIEWSTATE"] = Parser.GetViewState(response);
 
+
+
             districtId = (await Parser.Parse(Parser.GetMainContent(response))).Query("#ctl00_mainContent_ddlDistrict").OptionWithText(ViewModel.District)?.Value;
 
             if (districtId == null)
             {
                 throw new Exception($"District '{ViewModel.District}' not found!");
             }
-
+            
             // TODO: INSERT all districts into db.
 
             if (ViewModel.District != null)
@@ -148,6 +152,8 @@ namespace MatchPointTennis_Crawler.Models.Crawler
                 // TODO: INSERT all areas into db.
                 // OR do insertion on team page. We don't care about the IDs, just the name.
             }
+
+
 
             return postData["__VIEWSTATE"];
         }
