@@ -49,35 +49,35 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
         {
             if(Document.Query("#ctl00_mainContent_tblNoChampionships") != null)
             {
-                Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamsCollected, 0);
-                Mediator.Instance.NotifyColleagues(ViewModelMessages.Finished, 0);
+                Mediator.Instance.Notify(ViewModelMessages.ItemsCollected, 0);
+                //Mediator.Instance.Notify(ViewModelMessages.Finished, 0);
 
                 return null;
             }
 
-            var table = Document.Query("#ctl00_mainContent_divSearchResultsForTeams table") as IHtmlTableElement;
+            var table = Document.Query("#ctl00_mainContent_tblChampionshipListHeader + table + table") as IHtmlTableElement;
 
-            var teamRows = table.Rows.Take(table.Rows.Count() - 1).Skip(2);
+            var championshipRows = table.Rows.Take(table.Rows.Count() - 1).Skip(1);
 
-            Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamsCollected, teamRows.Count());
+            Mediator.Instance.Notify(ViewModelMessages.ItemsCollected, championshipRows.Count());
 
             using (var semaphore = new System.Threading.SemaphoreSlim(1))
             {
-                await Task.WhenAll(teamRows.Select(async team =>
+                await Task.WhenAll(championshipRows.Select(async championship =>
                 {
                     await semaphore.WaitAsync();
 
                     try
                     {
                         var item = await new ScrapeProfiles.Team(Crawler)
-                            .CreateFormDataFor_FromSearch(team.Cells[0].QuerySelector("a")?.Id, ReturnedViewstate)
+                            .CreateFormDataFor_FromSearch(championship.Cells[0].QuerySelector("a")?.Id, ReturnedViewstate)
                             .Post();
                         
-                        Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamProcessed, item.TeamName);
+                        Mediator.Instance.Notify(ViewModelMessages.ItemProcessed, item.TeamName);
                     }
                     catch
                     {
-                        Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamFailed, team.Cells[0].QuerySelector("a").InnerHtml.Cleanse());
+                        Mediator.Instance.Notify(ViewModelMessages.ItemFailed, championship.Cells[0].QuerySelector("a").InnerHtml.Cleanse());
                     }
                     finally
                     {

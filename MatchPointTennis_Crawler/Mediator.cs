@@ -11,9 +11,9 @@ namespace MatchPointTennis_Crawler
     /// </summary>
     public enum ViewModelMessages
     {
-        TeamProcessed,
-        TeamFailed,
-        TeamsCollected,
+        ItemProcessed,
+        ItemFailed,
+        ItemsCollected,
         Finished,
         RequestSent,
         RequestReceived,
@@ -55,7 +55,7 @@ namespace MatchPointTennis_Crawler
         /// </summary>
         /// <param name="message">The message for the notify by</param>
         /// <param name="args">The arguments for the message</param>
-        public void NotifyColleagues(ViewModelMessages message, object args)
+        public void Notify(ViewModelMessages message, object args)
         {
             if (internalList.ContainsKey(message))
             {

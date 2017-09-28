@@ -58,8 +58,8 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
         {
             if(Document.Query("#ctl00_mainContent_btnSearchAgain") != null)
             {
-                Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamsCollected, 0);
-                Mediator.Instance.NotifyColleagues(ViewModelMessages.Finished, 0);
+                Mediator.Instance.Notify(ViewModelMessages.ItemsCollected, 0);
+                Mediator.Instance.Notify(ViewModelMessages.Finished, 0);
 
                 return null;
             }
@@ -85,7 +85,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             //    var team = new Repository().Get<tklTeam>(f => f.Section == cachedTeam.Section);
             //}
 
-            Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamsCollected, teamRows.Count());
+            Mediator.Instance.Notify(ViewModelMessages.ItemsCollected, teamRows.Count());
 
             using (var semaphore = new System.Threading.SemaphoreSlim(1))
             {
@@ -99,11 +99,11 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                             .CreateFormDataFor_FromSearch(team.Cells[0].QuerySelector("a")?.Id, ReturnedViewstate)
                             .Post();
                         
-                        Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamProcessed, item.TeamName);
+                        Mediator.Instance.Notify(ViewModelMessages.ItemProcessed, item.TeamName);
                     }
                     catch
                     {
-                        Mediator.Instance.NotifyColleagues(ViewModelMessages.TeamFailed, team.Cells[0].QuerySelector("a").InnerHtml.Cleanse());
+                        Mediator.Instance.Notify(ViewModelMessages.ItemFailed, team.Cells[0].QuerySelector("a").InnerHtml.Cleanse());
                     }
                     finally
                     {

@@ -12,7 +12,9 @@ namespace MatchPointTennis_Crawler
     {
         public static IHtmlOptionElement OptionWithText(this IElement element, string text)
         {
-            return (element as IHtmlSelectElement)?.Options?.FirstOrDefault(f => f.InnerHtml.Cleanse() == text);
+            var cleansedText = text.Cleanse();
+
+            return (element as IHtmlSelectElement)?.Options?.FirstOrDefault(f => f.InnerHtml.Cleanse() == cleansedText);
         }
     }
 }

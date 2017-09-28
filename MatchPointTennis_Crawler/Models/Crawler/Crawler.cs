@@ -182,13 +182,13 @@ namespace MatchPointTennis_Crawler.Models.Crawler
             {
                 ItemsProcessed++;
                 TotalItemsProcessed++;
-            }, ViewModelMessages.TeamProcessed);
+            }, ViewModelMessages.ItemProcessed);
 
             Mediator.Instance.Register((object args) =>
             {
                 NumberOfItems = (int)args;
                 TotalNumberOfItems += (int)args;
-            }, ViewModelMessages.TeamsCollected);
+            }, ViewModelMessages.ItemsCollected);
 
             Mediator.Instance.Register((object args) =>
             {

@@ -116,13 +116,13 @@ namespace MatchPointTennis_Crawler
             }
 
             NumberOfRequests++;
-            Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestSent, NumberOfRequests);
+            Mediator.Instance.Notify(ViewModelMessages.RequestSent, NumberOfRequests);
 
             var content = await response?.Content.ReadAsStringAsync();
 
             var bytes = Convert.ToInt64(Encoding.ASCII.GetByteCount(content));
             NumberOfBytesTransfered += bytes;
-            Mediator.Instance.NotifyColleagues(ViewModelMessages.RequestReceived, bytes);
+            Mediator.Instance.Notify(ViewModelMessages.RequestReceived, bytes);
 
             watch.Stop();
 
