@@ -12,6 +12,7 @@ namespace MatchPointTennis_Crawler.Models
         {
         }
 
+        public virtual DbSet<tblChampionship> tblChampionships { get; set; }
         public virtual DbSet<tblMatch> tblMatches { get; set; }
         public virtual DbSet<tblTeamMatch> tblTeamMatches { get; set; }
         public virtual DbSet<tklArea> tklAreas { get; set; }
@@ -27,6 +28,18 @@ namespace MatchPointTennis_Crawler.Models
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<tblChampionship>()
+                .Property(e => e.Name)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<tblChampionship>()
+                .Property(e => e.Gender)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<tblChampionship>()
+                .Property(e => e.Level)
+                .IsUnicode(false);
+
             modelBuilder.Entity<tblMatch>()
                 .Property(e => e.MatchType)
                 .IsUnicode(false);

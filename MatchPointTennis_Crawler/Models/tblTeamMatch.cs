@@ -32,6 +32,8 @@ namespace MatchPointTennis_Crawler.Models
         [Column(TypeName = "smalldatetime")]
         public DateTime? DateEntered { get; set; }
 
+        public long? ChampionshipID { get; set; }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<tblMatch> tblMatches { get; set; }
 

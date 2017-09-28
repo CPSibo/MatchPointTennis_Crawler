@@ -69,15 +69,15 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
                     try
                     {
-                        var item = await new ScrapeProfiles.Team(Crawler)
-                            .CreateFormDataFor_FromSearch(championship.Cells[0].QuerySelector("a")?.Id, ReturnedViewstate)
+                        var item = await new ScrapeProfiles.ChampionshipReport(Crawler)
+                            .CreateFormDataFor_FromFlightSearch(championship.Cells[3].QuerySelector("a:first-of-type")?.Id, ReturnedViewstate)
                             .Post();
                         
-                        Mediator.Instance.Notify(ViewModelMessages.ItemProcessed, item.TeamName);
+                        Mediator.Instance.Notify(ViewModelMessages.ItemProcessed, item);
                     }
                     catch
                     {
-                        Mediator.Instance.Notify(ViewModelMessages.ItemFailed, championship.Cells[0].QuerySelector("a").InnerHtml.Cleanse());
+                        Mediator.Instance.Notify(ViewModelMessages.ItemFailed, championship.Cells[3].QuerySelector("a:first-of-type").InnerHtml.Cleanse());
                     }
                     finally
                     {
