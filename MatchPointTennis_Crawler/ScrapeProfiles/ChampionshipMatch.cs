@@ -16,10 +16,10 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
         public ChampionshipMatch(Crawler crawler)
             : base(crawler)
         {
-            LoadedElementID = "#ctl00_mainContent_pnlMatchAnchor";
+            LoadedElementID = "#ctl00_mainContent_pnlCPMatchAnchor";
         }
 
-        public ChampionshipMatch CreateFormDataFor_FromTeam(string linkId, string viewstate)
+        public ChampionshipMatch CreateFormDataFor_FromChampionshipReport(string linkId, string viewstate)
         {
             if (string.IsNullOrWhiteSpace(linkId))
             {
@@ -53,34 +53,32 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 };
             }
 
-            var summaryTable = Document.Query("#ctl00_mainContent_pnlMatchAnchor") as IHtmlTableElement;
+            var summaryTable = Document.Query("#ctl00_mainContent_pnlCPMatchAnchor") as IHtmlTableElement;
 
-            var scoreCardHeaderTable = Document.Query("#ctl00_mainContent_tblScoreCardHeader1") as IHtmlTableElement;
+            var scoreCardHeaderTable = Document.Query("#ctl00_mainContent_tblCPScoreCardHeader1") as IHtmlTableElement;
+            var scoreCardHeaderTable2 = Document.Query("#ctl00_mainContent_tblCPScoreCardHeader2") as IHtmlTableElement;
             var scoreCardHeader = scoreCardHeaderTable.QuerySelector("tr:first-child td:nth-child(1)").InnerHtml;
 
             var status = Regex.Match(scoreCardHeader, @"<strong>Status:.*?<\/strong>([^<&]*)[<&]", RegexOptions.Singleline | RegexOptions.IgnoreCase).Groups?[1]?.Value.Cleanse();
 
 
             
-            var homeTeamLink = scoreCardHeaderTable.QuerySelector("tr:last-child td:nth-child(2) a") as IHtmlAnchorElement;
+            var homeTeamLink = scoreCardHeaderTable2.QuerySelector("tr:last-child td:nth-child(2) a") as IHtmlAnchorElement;
             var homeTeamText = homeTeamLink.InnerHtml.Cleanse();
             var homeTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(homeTeamLink.Id, ReturnedViewstate).Post();
             leagueMatch.HomeTeamID = homeTeam.TeamID;
 
-            var visitingTeamLink = scoreCardHeaderTable.QuerySelector("tr:last-child td:nth-child(5) a") as IHtmlAnchorElement;
+            var visitingTeamLink = scoreCardHeaderTable2.QuerySelector("tr:last-child td:nth-child(5) a") as IHtmlAnchorElement;
             var visitingTeamText = visitingTeamLink.InnerHtml.Cleanse();
             var visitingTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(visitingTeamLink.Id, ReturnedViewstate).Post();
             leagueMatch.VisitingTeamID = visitingTeam.TeamID;
 
 
 
-            var scoreCardHeaderTable2 = Document.Query("#ctl00_mainContent_tblScoreCardHeader2") as IHtmlTableElement;
 
-            var scheduledDate = scoreCardHeaderTable2.QuerySelector("tr:nth-child(1) td:nth-child(1) table tr:nth-child(1) td:nth-child(1) b").InnerHtml.Cleanse();
-            var playedDate = scoreCardHeaderTable2.QuerySelector("tr:nth-child(1) td:nth-child(1) table tr:nth-child(1) td:nth-child(2) b").InnerHtml.Cleanse();
-            var entryDate = scoreCardHeaderTable2.QuerySelector("tr:nth-child(1) td:nth-child(1) table tr:nth-child(1) td:nth-child(3) b").InnerHtml.Cleanse();
-            var winCriteria = Document.Query("#ctl00_mainContent_trScoreCardMatchWinCriteria font").InnerHtml
-                .Replace(Document.Query("#ctl00_mainContent_trScoreCardMatchWinCriteria font strong").OuterHtml, "").Cleanse();
+            var scheduledDate = scoreCardHeaderTable.QuerySelector("#ctl00_mainContent_lblMatchPlayed").InnerHtml.Cleanse();
+            var playedDate = scoreCardHeaderTable.QuerySelector("#ctl00_mainContent_lblScheduled").InnerHtml.Cleanse();
+            var entryDate = scoreCardHeaderTable.QuerySelector("#ctl00_mainContent_lblModified").InnerHtml.Cleanse();
 
             leagueMatch.DateEntered = DateTime.Parse(entryDate).Date;
             leagueMatch.DateScheduled = DateTime.Parse(scheduledDate).Date;
@@ -96,7 +94,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             }
 
 
-            var matchesTables = Document.QueryAll("#ctl00_mainContent_divScoreCard > table").Where(f => f.Id == null).Select(f => f.QuerySelector("tr"));
+            var matchesTables = Document.QueryAll("#ctl00_mainContent_Panel1 > center > table:last-of-type tr").Reverse().Skip(1).Reverse();
 
             foreach (IHtmlTableRowElement row in matchesTables)
             {
@@ -105,9 +103,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                     TeamMatchID = leagueMatch.TeamMatchID
                 };
 
-                match.MatchType = row.Cells[0].InnerHtml.SplitOnBr()[0].Cleanse().ToLower();
-
-                var time = row.Cells[0].InnerHtml.SplitOnBr()[1].Cleanse();
+                match.MatchType = row.Cells[0].QuerySelector("span").InnerHtml.SplitOnBr()[0].Cleanse().ToLower();
 
 
 
@@ -145,7 +141,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 match.WinningTeamID = winningTeam?.TeamID;
 
 
-                var setScores = row.Cells[6].InnerHtml.SplitOnBr();
+                var setScores = row.Cells[6].QuerySelector("span").InnerHtml.SplitOnNewline();
 
                 if (setScores.Count() >= 1)
                 {

@@ -1,4 +1,5 @@
-﻿using AngleSharp.Dom.Html;
+﻿using AngleSharp.Dom;
+using AngleSharp.Dom.Html;
 using MatchPointTennis_Crawler.Models;
 using MatchPointTennis_Crawler.Models.Crawler;
 using System;
@@ -51,9 +52,54 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
                 {
                     USTAID = USTAId
                 };
+                var detailsTable = Document.Query("#ctl00_mainContent_tblCPStandingsHeader + table + table") as IHtmlTableElement;
+                var detailsRow = detailsTable.Rows[1];
+
+                var name = detailsRow.Cells[0].QuerySelector("a:first-of-type").InnerHtml.Cleanse();
+                var level = detailsRow.Cells[1].InnerHtml.Cleanse();
+                var leagueType_Rating_Gender = detailsRow.Cells[2].InnerHtml.Cleanse().Split("/");
+
+                var leagueType = leagueType_Rating_Gender[0].Cleanse();
+                var rating = leagueType_Rating_Gender[1].Cleanse();
+                var gender = leagueType_Rating_Gender[2].Cleanse();
+
+                championshipReport.Name = name;
+                championshipReport.Level = level;
+                championshipReport.Rating = Double.Parse(rating);
+                championshipReport.Gender = gender;
+
+                championshipReport.OwnerID = 0;
+
+                new Repository().Add(championshipReport).Save();
             }
 
-            var summaryTable = Document.Query("#ctl00_mainContent_pnlMatchAnchor") as IHtmlTableElement;
+
+
+            var roundsTable = Document.Query(".RoundTable") as IHtmlTableElement;
+            var rounds = roundsTable.Rows[0].Cells;
+
+
+            foreach(var round in rounds)
+            {
+                var links = round.QuerySelectorAll("table td div a");
+
+                if (links == null)
+                {
+                    continue;
+                }
+
+                var matches = links.Cast<IHtmlAnchorElement>();
+
+                foreach(var matchLink in matches)
+                {
+                    var match = await new ChampionshipMatch(Crawler)
+                        .CreateFormDataFor_FromChampionshipReport(matchLink.Id, ReturnedViewstate)
+                        .Post();
+
+                    match.ChampionshipID = championshipReport.ChampionshipID;
+                    new Repository().Edit(match).Save();
+                }
+            }
 
             return championshipReport;
         }

@@ -36,6 +36,11 @@ namespace MatchPointTennis_Crawler
             return me.Split(new string[] { "<br>" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
+        public static string[] SplitOnNewline(this string me)
+        {
+            return me.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
         public static string TitleCase(this string me)
         {
             return new CultureInfo("en-US", false).TextInfo.ToTitleCase(me);
@@ -82,6 +87,11 @@ namespace MatchPointTennis_Crawler
             }
 
             return name;
+        }
+
+        public static string[] Split(this string haystack, string token)
+        {
+            return haystack.Split(new string[] { token }, StringSplitOptions.None);
         }
     }
 }

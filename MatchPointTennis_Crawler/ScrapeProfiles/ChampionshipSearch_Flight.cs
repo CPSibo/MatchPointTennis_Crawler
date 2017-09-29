@@ -50,7 +50,7 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             if(Document.Query("#ctl00_mainContent_tblNoChampionships") != null)
             {
                 Mediator.Instance.Notify(ViewModelMessages.ItemsCollected, 0);
-                //Mediator.Instance.Notify(ViewModelMessages.Finished, 0);
+                Mediator.Instance.Notify(ViewModelMessages.Finished, 0);
 
                 return null;
             }
