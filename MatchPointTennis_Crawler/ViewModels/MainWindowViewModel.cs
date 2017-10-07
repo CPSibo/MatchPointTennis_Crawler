@@ -43,7 +43,39 @@ namespace MatchPointTennis_Crawler.ViewModels
             "Tournaments",
         };
 
-        public int Mode { get; set; } = 0;
+        private int _mode = 0;
+        public int Mode
+        {
+            get => _mode;
+            set
+            {
+                _mode = value;
+
+                SetSubModes();
+
+                NotifyPropertyChanged("Mode");
+            }
+        }
+
+        protected List<string> Championships_SubModes { get; set; } = new List<string>()
+        {
+            "District",
+            "Flight",
+        };
+
+        private List<string> _subModes = new List<string>();
+        public List<string> SubModes
+        {
+            get => _subModes;
+            set
+            {
+                _subModes = value;
+
+                NotifyPropertyChanged("SubModes");
+            }
+        }
+
+        public int SubMode { get; set; } = 0;
 
         private bool _isRunning = false;
         public bool IsRunning
@@ -95,6 +127,20 @@ namespace MatchPointTennis_Crawler.ViewModels
             await Crawler.Search();
 
             IsRunning = false;
+        }
+
+        protected void SetSubModes()
+        {
+            switch(Mode)
+            {
+                case 1:
+                    SubModes = Championships_SubModes;
+                    break;
+
+                default:
+                    SubModes = new List<string>();
+                    break;
+            }
         }
 
         //public async Task TeamSummaryDirect(double id = 2572278808, int year = 2017)

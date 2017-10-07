@@ -65,12 +65,14 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             
             var homeTeamLink = scoreCardHeaderTable2.QuerySelector("tr:last-child td:nth-child(2) a") as IHtmlAnchorElement;
             var homeTeamText = homeTeamLink.InnerHtml.Cleanse();
-            var homeTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(homeTeamLink.Id, ReturnedViewstate).Post();
+            var homeTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(homeTeamLink.Id, ReturnedViewstate).Post() ??
+                await AlternativeProccessTeam(true);
             leagueMatch.HomeTeamID = homeTeam.TeamID;
 
             var visitingTeamLink = scoreCardHeaderTable2.QuerySelector("tr:last-child td:nth-child(5) a") as IHtmlAnchorElement;
             var visitingTeamText = visitingTeamLink.InnerHtml.Cleanse();
-            var visitingTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(visitingTeamLink.Id, ReturnedViewstate).Post();
+            var visitingTeam = await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(visitingTeamLink.Id, ReturnedViewstate).Post() ??
+                await AlternativeProccessTeam(false);
             leagueMatch.VisitingTeamID = visitingTeam.TeamID;
 
 
@@ -212,6 +214,38 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
             }
 
             return await new PlayerSeason(Crawler).CreateFormDataFor_FromTeam(link.Id, ReturnedViewstate).Post();
+        }
+
+        protected async Task<tklTeam> AlternativeProccessTeam(bool homeTeam)
+        {
+            var formData = new Dictionary<string, string>() {
+                { "ctl00$ScriptManager1", $"ctl00$mainContent$UpdatePanel1|ctl00$mainContent$lnkMatchSummaryForCPFlight" },
+                { "ctl00$mainContent$hdnSearchType", "DefaultType"},
+                { "__EVENTTARGET", "ctl00$mainContent$lnkMatchSummaryForCPFlight"},
+                { "__EVENTARGUMENT", ""},
+                { "__ASYNCPOST", "true"},
+                { "__VIEWSTATE", ReturnedViewstate },
+                { "__VIEWSTATEGENERATOR", "FAFE42EE"},
+            };
+
+            var result = await Browser.SendRequest(Path, formData);
+
+            var returnedViewstate = Parser.GetViewState(result);
+
+            var document = await Parser.Parse(Parser.GetMainContent(result));
+
+            string link;
+
+            if (homeTeam)
+            {
+                link = document.QuerySelector("#ctl00_mainContent_rptCPMatchSummaryHeader_ctl00_rptCPMatchSummaryDetail_ctl00_lnkHomeTeamNameForCPMatchSummary").Id;
+            }
+            else
+            {
+                link = document.QuerySelector("#ctl00_mainContent_rptCPMatchSummaryHeader_ctl00_rptCPMatchSummaryDetail_ctl00_lnkVisitTeamNameForCPMatchSummary").Id;
+            }
+
+            return await new Team(Crawler) { ProcessMatches = false }.CreateFormDataFor_FromSearch(link, returnedViewstate).Post();
         }
     }
 }

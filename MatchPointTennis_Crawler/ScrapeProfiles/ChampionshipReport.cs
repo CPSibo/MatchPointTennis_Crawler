@@ -44,62 +44,111 @@ namespace MatchPointTennis_Crawler.ScrapeProfiles
 
         protected async override Task<tblChampionship> DoParse()
         {
-            tblChampionship championshipReport = new Repository().Get<tblChampionship>(f => f.USTAID == USTAId);
+            var detailsTable = Document.Query("#ctl00_mainContent_tblCPStandingsHeader + table + table") as IHtmlTableElement;
 
-            if (championshipReport == null)
+            if(detailsTable == null)
             {
-                championshipReport = new tblChampionship()
-                {
-                    USTAID = USTAId
-                };
-                var detailsTable = Document.Query("#ctl00_mainContent_tblCPStandingsHeader + table + table") as IHtmlTableElement;
-                var detailsRow = detailsTable.Rows[1];
+                detailsTable = Document.Query("#divCPSubFlightsForTeamStandings > table:nth-child(2)") as IHtmlTableElement;
+            }
+            
+            var detailsRow = detailsTable.Rows[1];
 
-                var name = detailsRow.Cells[0].QuerySelector("a:first-of-type").InnerHtml.Cleanse();
-                var level = detailsRow.Cells[1].InnerHtml.Cleanse();
-                var leagueType_Rating_Gender = detailsRow.Cells[2].InnerHtml.Cleanse().Split("/");
+            var name = detailsRow.Cells[0].QuerySelector("a:first-of-type").InnerHtml.Cleanse();
+            var level = detailsRow.Cells[1].InnerHtml.Cleanse();
+            var leagueType_Rating_Gender = detailsRow.Cells[2].InnerHtml.Cleanse().Split("/");
 
-                var leagueType = leagueType_Rating_Gender[0].Cleanse();
-                var rating = leagueType_Rating_Gender[1].Cleanse();
-                var gender = leagueType_Rating_Gender[2].Cleanse();
+            var leagueType = leagueType_Rating_Gender[0].Cleanse();
+            var rating = leagueType_Rating_Gender[1].Cleanse();
+            var gender = leagueType_Rating_Gender[2].Cleanse();
 
-                championshipReport.Name = name;
-                championshipReport.Level = level;
-                championshipReport.Rating = Double.Parse(rating);
-                championshipReport.Gender = gender;
+            // TODO: Need to match by year, as well.
+            tblChampionship championshipReport = new Repository().Get<tblChampionship>(f => f.Name == name);
 
-                championshipReport.OwnerID = 0;
-
-                new Repository().Add(championshipReport).Save();
+            if (championshipReport != null)
+            {
+                return championshipReport;
             }
 
-
-
-            var roundsTable = Document.Query(".RoundTable") as IHtmlTableElement;
-            var rounds = roundsTable.Rows[0].Cells;
-
-
-            foreach(var round in rounds)
+            championshipReport = new tblChampionship()
             {
-                var links = round.QuerySelectorAll("table td div a");
+                USTAID = USTAId,
+                Name = name,
+                Level = level,
+                Rating = Double.Parse(rating),
+                Gender = gender,
+                OwnerID = 0,
+            };
 
-                if (links == null)
+            new Repository().Add(championshipReport).Save();
+
+            long ownerID = 0;
+
+            FormData["ctl00$ScriptManager1"]    = "ctl00$mainContent$UpdatePanel1|ctl00$mainContent$lnkMatchSummaryForCPFlight";
+            FormData["__EVENTTARGET"]           = "ctl00$mainContent$lnkMatchSummaryForCPFlight";
+            FormData["__VIEWSTATE"]             = ReturnedViewstate;
+
+            Result = await Browser.SendRequest(Path, FormData);
+            ReturnedViewstate = Parser.GetViewState(Result);
+            Document = await Parser.Parse(Parser.GetMainContent(Result));
+
+            if(Document.Query("#ctl00_mainContent_tblCpMatchesHeader") == null)
+            {
+                throw new Exception($"Could not load Match Summary tab. ID={USTAId}");
+            }
+
+            var wrapper = Document.Query(".panes");
+            var links = wrapper.QuerySelectorAll("td > .hastooltip > a");
+
+            var matches = links.Cast<IHtmlAnchorElement>();
+
+            foreach(var matchLink in matches)
+            {
+                var match = await new ChampionshipMatch(Crawler)
+                    .CreateFormDataFor_FromChampionshipReport(matchLink.Id, ReturnedViewstate)
+                    .Post();
+
+                match.ChampionshipID = championshipReport.ChampionshipID;
+                new Repository().Edit(match).Save();
+
+                if (ownerID == 0)
                 {
-                    continue;
-                }
+                    tklTeam team = new Repository().Get<tklTeam>(f => f.TeamID == match.HomeTeamID);
+                    var subflight = new Repository().Get<tklSubFlight>(f => f.SubFlightID == team.SubFlightID);
+                    var flight = new Repository().Get<tklFlight>(f => f.FlightID == subflight.FlightID);
+                    var league = new Repository().Get<tklLeague>(f => f.LeagueID == flight.LeagueID);
+                    var area = new Repository().Get<tklArea>(f => f.AreaID == league.AreaID);
+                    var district = new Repository().Get<tklDistrict>(f => f.DistrictID == area.DistrictID);
 
-                var matches = links.Cast<IHtmlAnchorElement>();
+                    switch (championshipReport.Level)
+                    {
+                        case "Flight":
+                            if(flight.FlightID == 0)
+                            {
+                                throw new Exception($"Could not get flight ID. ID={USTAId}");
+                            }
 
-                foreach(var matchLink in matches)
-                {
-                    var match = await new ChampionshipMatch(Crawler)
-                        .CreateFormDataFor_FromChampionshipReport(matchLink.Id, ReturnedViewstate)
-                        .Post();
+                            ownerID = flight.FlightID;
+                            break;
 
-                    match.ChampionshipID = championshipReport.ChampionshipID;
-                    new Repository().Edit(match).Save();
+                        case "District":
+                            if (district.DistrictID == 0)
+                            {
+                                throw new Exception($"Could not get district ID. ID={USTAId}");
+                            }
+
+                            ownerID = district.DistrictID;
+                            break;
+                    }
                 }
             }
+
+            if(ownerID == 0)
+            {
+                throw new Exception($"Owner ID not found. ID={USTAId}");
+            }
+
+            championshipReport.OwnerID = ownerID;
+            new Repository().Edit(championshipReport).Save();
 
             return championshipReport;
         }

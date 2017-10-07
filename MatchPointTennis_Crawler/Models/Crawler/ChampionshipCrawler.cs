@@ -64,46 +64,53 @@ namespace MatchPointTennis_Crawler.Models.Crawler
 
             try
             {
-                // Permutate areas...
-                foreach (var area in ((IHtmlSelectElement)doc.Query("#ctl00_mainContent_ddlAreaChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
+                if (ViewModel.SubMode == 1)
                 {
-                    var areaPostData = SelectIntoPostData(postData, doc,
-                       "ctl00_mainContent_ddlAreaChampion", "ctl00$mainContent$ddlAreaChampion", area);
-                    response = await Browser.SendRequest(searchPage, areaPostData, true);
-                    areaPostData["__VIEWSTATE"] = Parser.GetViewState(response);
-                    var areaDoc = await Parser.Parse(response);
-
-                    // Permutate leagues...
-                    foreach (var league in ((IHtmlSelectElement)areaDoc.Query("#ctl00_mainContent_ddlLeagueChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
+                    // Permutate areas...
+                    foreach (var area in ((IHtmlSelectElement)doc.Query("#ctl00_mainContent_ddlAreaChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
                     {
-                        var leaguePostData = SelectIntoPostData(areaPostData, areaDoc,
-                           "ctl00_mainContent_ddlLeagueChampion", "ctl00$mainContent$ddlLeagueChampion", league);
-                        response = await Browser.SendRequest(searchPage, leaguePostData, true);
-                        leaguePostData["__VIEWSTATE"] = Parser.GetViewState(response);
-                        var leagueDoc = await Parser.Parse(response);
+                        var areaPostData = SelectIntoPostData(postData, doc,
+                           "ctl00_mainContent_ddlAreaChampion", "ctl00$mainContent$ddlAreaChampion", area);
+                        response = await Browser.SendRequest(searchPage, areaPostData, true);
+                        areaPostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                        var areaDoc = await Parser.Parse(response);
 
-                        // Permutate flights...
-                        foreach (var flight in ((IHtmlSelectElement)leagueDoc.Query("#ctl00_mainContent_ddlFlightChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
+                        // Permutate leagues...
+                        foreach (var league in ((IHtmlSelectElement)areaDoc.Query("#ctl00_mainContent_ddlLeagueChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
                         {
-                            var flightPostData = SelectIntoPostData(leaguePostData, leagueDoc,
-                               "ctl00_mainContent_ddlFlightChampion", "ctl00$mainContent$ddlFlightChampion", flight);
-                            response = await Browser.SendRequest(searchPage, flightPostData, true);
-                            flightPostData["__VIEWSTATE"] = Parser.GetViewState(response);
-                            var flightDoc = await Parser.Parse(response);
+                            var leaguePostData = SelectIntoPostData(areaPostData, areaDoc,
+                               "ctl00_mainContent_ddlLeagueChampion", "ctl00$mainContent$ddlLeagueChampion", league);
+                            response = await Browser.SendRequest(searchPage, leaguePostData, true);
+                            leaguePostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                            var leagueDoc = await Parser.Parse(response);
+
+                            // Permutate flights...
+                            foreach (var flight in ((IHtmlSelectElement)leagueDoc.Query("#ctl00_mainContent_ddlFlightChampion")).Options.Where(f => f.Value != "0").Select(f => f.InnerHtml))
+                            {
+                                var flightPostData = SelectIntoPostData(leaguePostData, leagueDoc,
+                                   "ctl00_mainContent_ddlFlightChampion", "ctl00$mainContent$ddlFlightChampion", flight);
+                                response = await Browser.SendRequest(searchPage, flightPostData, true);
+                                flightPostData["__VIEWSTATE"] = Parser.GetViewState(response);
+                                var flightDoc = await Parser.Parse(response);
 
 
 
-                            await new ScrapeProfiles.ChampionshipSearch_Flight(this)
-                                .CreateFormDataFor_FlightSearch(flightPostData)
-                                .Post();
+                                await new ScrapeProfiles.ChampionshipSearch_Flight(this)
+                                    .CreateFormDataFor_FlightSearch(flightPostData)
+                                    .Post();
+                            }
                         }
                     }
                 }
+                else
+                {
+                    await new ScrapeProfiles.ChampionshipSearch_District(this)
+                        .CreateFormDataFor_DistrictSearch(postData)
+                        .Post();
+                }
             }
-            catch(Exception ex)
-            {
-
-            }
+            catch (Exception ex)
+            { }
 
             Log.Append($"Finished {ViewModel.Section} | {ViewModel.District} | {ViewModel.Area} | {ViewModel.Gender} | {ViewModel.Year} | {rating}{Environment.NewLine}");
             Log.Append($"\t{Elapsed:dd\\.hh\\:mm\\:ss} | {NumberOfRequests} Requests | {NumberOfBytes}{Environment.NewLine}{Environment.NewLine}");
@@ -138,9 +145,13 @@ namespace MatchPointTennis_Crawler.Models.Crawler
              */
             postData = SelectIntoPostData(postData, doc,
                 "ctl00_mainContent_ddlCYear", "ctl00$mainContent$ddlCYear", ViewModel.Year.ToString());
-            response = await Browser.SendRequest(searchPage, postData, true);
-            postData["__VIEWSTATE"] = Parser.GetViewState(response);
-            doc = await Parser.Parse(response);
+
+            if (((IHtmlSelectElement)doc.QuerySelector("#ctl00_mainContent_ddlCYear")).Value != ViewModel.Year.ToString())
+            {
+                response = await Browser.SendRequest(searchPage, postData, true);
+                postData["__VIEWSTATE"] = Parser.GetViewState(response);
+                doc = await Parser.Parse(response);
+            }
 
 
 
